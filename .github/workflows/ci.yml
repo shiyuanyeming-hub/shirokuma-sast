@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: 型検査・テスト・ビルド
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: 依存をインストール
+        run: npm ci
+
+      - name: 型検査（strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes）
+        run: npm run typecheck
+
+      - name: テスト
+        run: npm test
+
+      - name: ビルド
+        run: npm run build
+
+      - name: CLI の起動確認
+        run: |
+          node dist/cli/main.js --version
+          node dist/cli/main.js rules --json > /dev/null
+          node dist/cli/main.js scan benchmarks/vulnerable --fail-on none --quiet > /dev/null
+          echo "CLI OK"
+
+  benchmark:
+    name: 検出精度ベンチマーク
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: 精度を測定し、下限を下回ったら失敗させる
+        run: npm run bench:check
+
+      - name: レポートを保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report
+          path: reports/
+
+  sarif:
+    name: 自分自身をスキャンして SARIF を解析する
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci && npm run build
+
+      # ドッグフーディング: 自作ツールで自分自身を解析する。
+      # 検出が出ても CI は落とさない（--fail-on none）。
+      # 「自分のコードに指摘が無いこと」を主張するのではなく、
+      # 解析が完走することを継続的に確認するのが目的。
+      - name: セルフスキャン
+        run: node dist/cli/main.js scan src --format sarif --output shirokuma.sarif --fail-on none --quiet
+
+      - name: GitHub Code Scanning へアップロード
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: shirokuma.sarif
+          category: shirokuma-sast

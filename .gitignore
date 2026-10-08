@@ -1,0 +1,22 @@
+# 依存関係とビルド成果物
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# npm キャッシュ（$HOME が書き込めない環境でも npm install が動くよう同梱）
+.npm-cache/
+
+# スキャン結果（レポートは再生成できるため除外）
+*.sarif
+reports/*.json
+# ただし README へ埋め込む測定結果はコミットする
+!reports/benchmark.json
+!reports/benchmark.md
+
+# エディタ / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/settings.json
+*.log

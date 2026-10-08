@@ -1,0 +1,50 @@
+# フル機能の設定ファイル（テスト用）
+version: 1
+
+rules:
+  # 明示指定した除外パスは組み込み既定を置き換える
+  ignorePaths:
+    - '**/node_modules/**'
+    - '**/*.generated.ts'
+
+  sources:
+    - id: my-framework-query
+      member: ctx.request.query
+      kinds: [sql, html]
+      description: 独自フレームワークのクエリ
+    - id: my-scoped-body
+      member: req.body
+      kinds: [sql]
+      withinFunctions:
+        - Controller.create
+
+  sanitizers:
+    - id: my-sanitizer
+      call: escapeAll
+      kinds: [html]
+    - id: my-all-kinds-sanitizer
+      call: neutralize
+
+  sinks:
+    - id: my-sink
+      member: mydb.run
+      call: run
+      kinds: [sql]
+      severity: warning
+      taintedArgs: [0, 1]
+      cwe: [CWE-89]
+      message: 独自 DB ラッパーへの到達
+      advice: プレースホルダを使ってください
+
+  propagators:
+    - call: passthrough
+
+analysis:
+  maxCallDepth: 5
+  maxIterations: 42
+  dedupe: false
+
+output:
+  format: sarif
+  output: reports/out.sarif
+  failOn: warning

@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "description": "shirokuma-sast の検出精度を測るための教師データ。行番号は実際のソースと一致していること。「脆弱な箇所」と「安全な箇所」の両方を含む。1 つの汚染が複数のシンクへ到達する場合は、到達先ごとに 1 件として数える（ツールは到達したシンクをすべて報告する設計のため）。",
+  "tolerance": 3,
+  "families": {
+    "sql": "CWE-89 SQL インジェクション",
+    "html": "CWE-79 クロスサイトスクリプティング",
+    "command": "CWE-78 OS コマンドインジェクション",
+    "path": "CWE-22 パストラバーサル",
+    "code": "CWE-94 コードインジェクション",
+    "nosql": "CWE-943 NoSQL インジェクション",
+    "url": "CWE-601 オープンリダイレクト / CWE-918 SSRF"
+  },
+  "vulnerable": [
+    {
+      "file": "vulnerable/code-injection-eval.ts",
+      "line": 7,
+      "family": "code",
+      "cwe": "CWE-94",
+      "note": "eval"
+    },
+    {
+      "file": "vulnerable/code-injection-function.ts",
+      "line": 7,
+      "family": "code",
+      "cwe": "CWE-94",
+      "note": "new Function"
+    },
+    {
+      "file": "vulnerable/cwe78-exec-concat.ts",
+      "line": 8,
+      "family": "command",
+      "cwe": "CWE-78",
+      "note": "exec への連結"
+    },
+    {
+      "file": "vulnerable/cwe78-exec-interprocedural.ts",
+      "line": 12,
+      "family": "command",
+      "cwe": "CWE-78",
+      "note": "戻り値を介した伝播"
+    },
+    {
+      "file": "vulnerable/cwe78-exec-interprocedural.ts",
+      "line": 13,
+      "family": "html",
+      "cwe": "CWE-79",
+      "note": "コマンド出力が res.send でそのまま返る（外部コマンドの出力も信頼できない）"
+    },
+    {
+      "file": "vulnerable/cwe78-exec-template.ts",
+      "line": 8,
+      "family": "command",
+      "cwe": "CWE-78",
+      "note": "child_process.exec へのテンプレート補間"
+    },
+    {
+      "file": "vulnerable/nosql-injection-find.ts",
+      "line": 7,
+      "family": "nosql",
+      "cwe": "CWE-943",
+      "note": "演算子オブジェクトを直接渡す"
+    },
+    {
+      "file": "vulnerable/nosql-injection-where.ts",
+      "line": 7,
+      "family": "nosql",
+      "cwe": "CWE-943",
+      "note": "$where への文字列"
+    },
+    {
+      "file": "vulnerable/open-redirect.ts",
+      "line": 7,
+      "family": "url",
+      "cwe": "CWE-601",
+      "note": "未検証のリダイレクト先"
+    },
+    {
+      "file": "vulnerable/path-traversal-readfile.ts",
+      "line": 10,
+      "family": "path",
+      "cwe": "CWE-22",
+      "note": "path.join は無害化しない"
+    },
+    {
+      "file": "vulnerable/path-traversal-readfile.ts",
+      "line": 11,
+      "family": "html",
+      "cwe": "CWE-79",
+      "note": "読み出したファイル内容が res.send でそのまま返る"
+    },
+    {
+      "file": "vulnerable/path-traversal-sendfile.ts",
+      "line": 7,
+      "family": "path",
+      "cwe": "CWE-22",
+      "note": "sendFile への連結"
+    },
+    {
+      "file": "vulnerable/safe-looking-but-broken-sanitizer.ts",
+      "line": 16,
+      "family": "sql",
+      "cwe": "CWE-89",
+      "note": "HTML エスケープを SQL の無害化と誤認させる例。汚染は残る"
+    },
+    {
+      "file": "vulnerable/sqli-concat.ts",
+      "line": 8,
+      "family": "sql",
+      "cwe": "CWE-89",
+      "note": "文字列連結による SQL 組み立て"
+    },
+    {
+      "file": "vulnerable/sqli-interprocedural.ts",
+      "line": 13,
+      "family": "sql",
+      "cwe": "CWE-89",
+      "note": "ヘルパー関数をまたぐ伝播"
+    },
+    {
+      "file": "vulnerable/sqli-object-flow.ts",
+      "line": 8,
+      "family": "sql",
+      "cwe": "CWE-89",
+      "note": "オブジェクト経由の伝播と分割プロパティ"
+    },
+    {
+      "file": "vulnerable/sqli-template.ts",
+      "line": 8,
+      "family": "sql",
+      "cwe": "CWE-89",
+      "note": "テンプレートリテラルの補間"
+    },
+    {
+      "file": "vulnerable/ssrf-fetch.ts",
+      "line": 8,
+      "family": "url",
+      "cwe": "CWE-918",
+      "note": "利用者が指定する URL へのリクエスト"
+    },
+    {
+      "file": "vulnerable/xss-document-write.ts",
+      "line": 7,
+      "family": "html",
+      "cwe": "CWE-79",
+      "note": "document.write"
+    },
+    {
+      "file": "vulnerable/xss-innerhtml.ts",
+      "line": 8,
+      "family": "html",
+      "cwe": "CWE-79",
+      "note": "innerHTML への代入"
+    },
+    {
+      "file": "vulnerable/xss-template.ts",
+      "line": 8,
+      "family": "html",
+      "cwe": "CWE-79",
+      "note": "res.send への HTML 連結"
+    }
+  ],
+  "clean": [
+    {
+      "file": "clean/sqli-parameterized.ts",
+      "line": 7,
+      "note": "プレースホルダ（$1）を使っている"
+    },
+    {
+      "file": "clean/sqli-static-query.ts",
+      "line": 7,
+      "note": "リテラルのみ"
+    },
+    {
+      "file": "clean/sqli-safe-helper.ts",
+      "line": 11,
+      "note": "ヘルパー内でプレースホルダを使っている"
+    },
+    {
+      "file": "clean/xss-escaped.ts",
+      "line": 10,
+      "note": "escape-html を通している"
+    },
+    {
+      "file": "clean/xss-double-escaped.ts",
+      "line": 8,
+      "note": "二重にエスケープ"
+    },
+    {
+      "file": "clean/cwe78-execfile-array.ts",
+      "line": 8,
+      "note": "execFile の配列引数（シェル非経由）"
+    },
+    {
+      "file": "clean/path-static-file.ts",
+      "line": 7,
+      "note": "リテラルのパス"
+    },
+    {
+      "file": "clean/path-basename.ts",
+      "line": 10,
+      "note": "path.basename で無害化"
+    },
+    {
+      "file": "clean/nosql-validated-number.ts",
+      "line": 8,
+      "note": "parseInt で数値に強制"
+    },
+    {
+      "file": "clean/redirect-whitelist.ts",
+      "line": 10,
+      "note": "許可リストで検証"
+    },
+    {
+      "file": "clean/ssrf-allowlist-host.ts",
+      "line": 10,
+      "note": "ホストが固定"
+    },
+    {
+      "file": "clean/taint-without-sink.ts",
+      "line": 7,
+      "note": "汚染は流れるが危険な操作がない"
+    },
+    {
+      "file": "clean/ssrf-allowlist-host.ts",
+      "line": 11,
+      "note": "JSON 応答は HTML として解釈されないため XSS シンクとして報告しない"
+    }
+  ]
+}

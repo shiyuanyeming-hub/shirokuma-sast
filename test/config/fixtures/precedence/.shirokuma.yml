@@ -1,0 +1,3 @@
+# 探索順の検証用: こちらが優先される（CONFIG_FILE_CANDIDATES の先頭）
+output:
+  format: json

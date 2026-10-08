@@ -1,0 +1,54 @@
+{
+  "name": "shirokuma-sast",
+  "version": "0.1.0",
+  "description": "クロスファンクション汚染解析（テイント解析）による TypeScript/JavaScript 向け SAST エンジン",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "bin": {
+    "shirokuma": "./dist/cli/main.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "bench": "npm run build && node dist/benchmark/run.js && node dist/benchmark/embed.js",
+    "selfscan": "node dist/cli/main.js scan src --format pretty --fail-on none",
+    "prepare": "npm run build",
+    "bench:check": "npm run build && node --experimental-strip-types scripts/check-benchmark.ts"
+  },
+  "dependencies": {
+    "typescript": "~5.9.3",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.0",
+    "vitest": "^3.2.4"
+  },
+  "keywords": [
+    "sast",
+    "taint-analysis",
+    "static-analysis",
+    "security",
+    "typescript",
+    "sarif",
+    "appsec"
+  ]
+}

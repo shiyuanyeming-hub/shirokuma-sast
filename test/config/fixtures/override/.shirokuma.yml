@@ -1,0 +1,8 @@
+# 組み込み規則を id で上書きする（後勝ち。順序は最初の宣言のまま）
+rules:
+  sinks:
+    - id: sql-query
+      call: query
+      kinds: [nosql]
+      severity: note
+      message: 上書きされた規則

@@ -1,0 +1,4 @@
+output:
+  format: markdown
+  # 未知キー（前方互換の検証用: 警告になるが解析は続行する）
+  verbosity: 3

@@ -1,0 +1,85 @@
+# shirokuma-sast の設定ファイル。
+#
+# 使い方:
+#   1. このファイルをプロジェクト直下へ `.shirokuma.yml` としてコピーする
+#   2. ルールを追記する（組み込みルールへ「追記」される。置き換えではない）
+#   3. `shirokuma scan .` を実行する
+#
+# 設定ファイルが無い場合は組み込みルールだけで動作する。
+# `--config <ファイル>` で明示的に指定することもできる。
+
+schemaVersion: 1
+
+rules:
+  # ---------------------------------------------------------------------
+  # ソース: 汚染が発生する入口。`member` / `identifier` / `call` の
+  # いずれか 1 つ以上を指定する。
+  # ---------------------------------------------------------------------
+  sources:
+    - id: internal-ticket-header
+      member: req.headers.x-internal-ticket
+      kinds: [sql, html]
+      description: 社内チケット連携ヘッダ。利用者が改変できるため信頼しない
+
+    - id: grpc-request-field
+      identifier: grpcRequest
+      kinds: [unknown]
+      description: gRPC のリクエスト本文
+
+  # ---------------------------------------------------------------------
+  # サニタイザ: 汚染を無害化する関数。
+  # `validation` は「本当に無害化できているか」の追加検証:
+  #   - none             : 常に有効
+  #   - static-sql       : 第 1 引数がリテラルのときだけ有効（プレースホルダ用法）
+  #   - constant-argument: 指定引数がリテラルのときだけ有効
+  # ---------------------------------------------------------------------
+  sanitizers:
+    - id: internal-sql-builder
+      member: db.sql
+      kinds: [sql]
+      validation: static-sql
+      description: 社内のプレースホルダ付きクエリビルダ
+
+    - id: internal-html-escape
+      call: sanitizeForHtml
+      kinds: [html]
+      validation: none
+      description: 社内標準の HTML エスケープ
+
+  # ---------------------------------------------------------------------
+  # シンク: 汚染が到達すると危険な操作。
+  # `taintedArgs` を指定すると、汚染が到達してよい引数の位置を限定できる
+  # （0-based）。省略時はすべての引数を検査する。
+  # ---------------------------------------------------------------------
+  sinks:
+    - id: custom-report-render
+      member: report.render
+      kinds: [html]
+      severity: warning
+      cwe: [CWE-79]
+      message: レポートへ未検証の HTML を埋め込んでいます
+      advice: 事前にエスケープするか、テンプレートエンジンの自動エスケープを有効にしてください
+      taintedArgs: [1]
+
+  # 追加の伝播規則（値をそのまま素通しする関数）
+  propagators:
+    - call: passThrough
+    - member: utils.identity
+
+  # 解析対象から除外するパス（glob）
+  ignorePaths:
+    - '**/*.generated.ts'
+    - 'src/generated'
+
+analysis:
+  # 1 関数あたりの反復上限。再帰・相互再帰の打ち切りに使う
+  maxCallDepth: 3
+  maxIterations: 200
+  # 報告するタグを限定する場合（省略時はすべて）
+  # kinds: [sql, command]
+  dedupe: true
+
+output:
+  format: pretty
+  # この重要度以上で終了コード 1 を返す（CI ゲート）
+  failOn: error

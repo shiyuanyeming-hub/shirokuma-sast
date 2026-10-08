@@ -1,0 +1,5 @@
+# 構文エラーを含む設定ファイル（テスト用）
+rules:
+  sinks:
+    - id: broken
+  this line has no colon

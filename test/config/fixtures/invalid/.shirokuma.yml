@@ -1,0 +1,8 @@
+# 型エラーを含む設定ファイル（テスト用）: severity は error / warning / note のみ
+rules:
+  sinks:
+    - id: bad-severity
+      call: run
+      kinds: [sql]
+      severity: fatal
+      message: 不正な重要度

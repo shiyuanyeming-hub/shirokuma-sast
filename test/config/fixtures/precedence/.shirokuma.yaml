@@ -1,0 +1,3 @@
+# 探索順の検証用: `.shirokuma.yml` があるため読み込まれない
+output:
+  format: markdown

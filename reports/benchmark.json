@@ -1,0 +1,91 @@
+{
+  "generatedAt": "2026-10-08T07:20:55.625Z",
+  "tool": "shirokuma-sast@0.1.0 (engine 0.1.0)",
+  "overall": {
+    "truePositives": 21,
+    "falsePositives": 2,
+    "falseNegatives": 0,
+    "precision": 0.913,
+    "recall": 1,
+    "f1": 0.955
+  },
+  "byFamily": {
+    "code": {
+      "truePositives": 2,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    "command": {
+      "truePositives": 3,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    "html": {
+      "truePositives": 5,
+      "falsePositives": 1,
+      "falseNegatives": 0,
+      "precision": 0.833,
+      "recall": 1,
+      "f1": 0.909
+    },
+    "nosql": {
+      "truePositives": 2,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    "path": {
+      "truePositives": 2,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    "sql": {
+      "truePositives": 5,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    "url": {
+      "truePositives": 2,
+      "falsePositives": 1,
+      "falseNegatives": 0,
+      "precision": 0.667,
+      "recall": 1,
+      "f1": 0.8
+    }
+  },
+  "missed": [],
+  "falsePositives": [
+    {
+      "file": "clean/path-basename.ts",
+      "line": 10,
+      "ruleId": "xss-res-send",
+      "message": "`res.send()` へ未エスケープの外部入力が到達しています（クロスサイトスクリプティング）"
+    },
+    {
+      "file": "clean/redirect-whitelist.ts",
+      "line": 10,
+      "ruleId": "redirect-res",
+      "message": "`res.redirect()` のリダイレクト先が外部入力になっています（オープンリダイレクト）"
+    }
+  ],
+  "totals": {
+    "findings": 23,
+    "files": 31,
+    "functions": 45,
+    "millis": 45
+  }
+}
