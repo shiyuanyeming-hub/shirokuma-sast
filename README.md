@@ -8,6 +8,8 @@
 TypeScript のコンパイラ API で AST を読み、データフローグラフを組み、
 **外部入力がどこから入って、どう流れて、どの危険な操作に到達したか** を追跡します。
 
+![汚染の流れを追跡する](docs/assets/taint-flow.png)
+
 ```
 $ shirokuma scan .
 
@@ -31,6 +33,97 @@ SAST で最も時間を食う「本当に到達しうるのか」の確認作業
 [![CI](https://github.com/shiyuanyeming-hub/shirokuma-sast/actions/workflows/ci.yml/badge.svg)](https://github.com/shiyuanyeming-hub/shirokuma-sast/actions/workflows/ci.yml)
 
 ---
+
+## 検出例 — 5 ホップ先のシンクまで追う
+
+`benchmarks/` にある実際のサンプルで、何が起きているかを順に見ます。
+
+```ts
+const express = require('express');
+
+const app = express();
+
+app.get('/users', (req, res) => {
+  const id = req.query.id;                                  // ← 汚染の入口
+  const sql = 'SELECT * FROM users WHERE id = ' + id;        // ← 連結して伝播
+  db.query(sql);                                            // ← 危険な操作
+});
+```
+
+このファイルを解析すると、次の 1 件が出ます（上の図と同じ内容です）。
+
+```console
+$ shirokuma scan app.ts
+
+shirokuma-sast 0.1.0 — 検出 1 件（error 1 / warning 0 / note 0）
+
+[error] sql-query  app.ts:8:3
+  `query()` へ外部入力が到達しています（SQL インジェクション）
+  cwe: CWE-89
+  advice: SQL 文へ値を連結せず、プレースホルダ（`?` / `$1` / `:name`）とバインド引数を使ってください。
+  ├─ source    app.ts:6:14  req.query.id (Express: クエリ文字列（`?a=b`）由来の値。)
+  ├─ propagate app.ts:6:9  id
+  ├─ propagate app.ts:7:15  'SELECT * FROM users WHERE id = ' + id
+  ├─ propagate app.ts:7:9  sql
+  └─ sink      app.ts:8:3  db.query
+
+── サマリ ──────────────────────────────────────────
+検出      : 1 件（error 1 / warning 0 / note 0）
+ファイル  : 1 件をスキャン、1 件で検出
+関数      : 1 件を解析（iterations 13）
+グラフ    : ノード 14 / エッジ 10
+```
+
+読み方:
+
+| 種別 | 意味 |
+| --- | --- |
+| `source` | 外部入力が入ってきた場所。ここでは Express のクエリ文字列 |
+| `propagate` | 値が移動した各ステップ。代入 2 回と文字列連結 1 回 |
+| `sanitize` | 無害化を受けた場所（この例では無い。エスケープしていれば経路上に出る） |
+| `sink` | 危険な操作に到達した地点。ここを直す |
+
+**「なぜ危険なのか」を人が追わなくてよい** のが要点です。
+`req.query.id` と `db.query` は別の行にあり、間に 2 つの変数があります。
+正規表現で `req.query` と `db.query` を別々に探すだけでは、
+この 2 つが繋がっていることを示せません。
+
+### 直すとどうなるか
+
+プレースホルダに変えると、`db.query` の用法が正しいと判定され、**検出が消えます**。
+
+```ts
+app.get('/users', (req, res) => {
+  const id = req.query.id;
+  db.query('SELECT * FROM users WHERE id = $1', [id]);   // ← 検出されない
+});
+```
+
+ただし `db.query(sqlVar)` のように**変数をそのまま渡す**と、
+プレースホルダのつもりでもサニタイザとして無効と判定され、汚染は残ります。
+「呼べば安全」ではなく「正しく使えば安全」まで見ているためです。
+
+実際に試すには、リポジトリ同梱の実行例を使ってください。
+
+```bash
+npm run build
+node dist/cli/main.js scan examples/vulnerable-api --fail-on none   # 4 件検出
+node dist/cli/main.js scan examples/vulnerable-api/safe              # 0 件
+node dist/cli/main.js scan benchmarks/vulnerable                     # 脆弱 21 ファイル → 21 件検出
+node dist/cli/main.js scan benchmarks/clean                          # 安全 12 ファイル → 2 件
+
+# 上の 2 件は「既知の制限」に書いた偽陽性そのものです（path-basename / redirect-whitelist）。
+# 数値を隠さずに出しているので、精度の議論がそのまま再現できます。
+```
+
+図は `scripts/make_diagrams.py` で生成しています（文字幅を実測して
+レイアウトするため、文字化けや重なりが起きません）。
+再生成する場合:
+
+```bash
+python3 scripts/make_diagrams.py
+rsvg-convert -z 2 docs/assets/taint-flow.svg -o docs/assets/taint-flow.png
+```
 
 ## なぜ AST ではなくデータフローなのか
 
