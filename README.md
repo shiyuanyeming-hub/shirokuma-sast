@@ -10,25 +10,28 @@ TypeScript のコンパイラ API で AST を読み、データフローグラ�
 
 ![汚染の流れを追跡する](docs/assets/taint-flow.png)
 
-```
-$ shirokuma scan .
+```console
+$ shirokuma scan examples/vulnerable-api
 
-shirokuma-sast 0.1.0 — 検出 3 件（error 2 / warning 1 / note 0）
+shirokuma-sast 0.1.0 — 検出 4 件（error 4 / warning 0 / note 0）
 
-[error] sql-query  src/app.ts:8:3
-  `query()` へ未エスケープの外部入力が到達しています（SQL インジェクション）
-  cwe: CWE-89
-  advice: プレースホルダ（$1 / ?）を使い、文字列連結でクエリを組み立てないでください。
-  ├─ source    src/app.ts:6:15  req.query.id (Express: クエリ文字列（`?a=b`）由来の値。)
-  ├─ propagate src/app.ts:6:9   id
-  ├─ propagate src/app.ts:7:34  'SELECT * FROM users WHERE id = ' + id
-  ├─ propagate src/app.ts:7:9   sql
-  └─ sink      src/app.ts:8:3   db.query
+[error] command-exec  src/command.ts:9:3
+  `exec()` へ外部入力が到達しています（OS コマンドインジェクション）
+  cwe: CWE-78
+  advice: `exec` 系ではなく `execFile` / `spawn` に配列引数を渡し、シェルを経由しないでください。
+  ├─ source    src/command.ts:8:16  req.query.host (Express: クエリ文字列（`?a=b`）由来の値。)
+  ├─ propagate src/command.ts:8:9  host
+  ├─ propagate src/command.ts:9:8  'ping -c 1 ' + host
+  └─ sink      src/command.ts:9:3  exec
+
+
+  …ほか 3 件（SQL インジェクション / XSS / パストラバーサル）
 ```
 
 **「なぜ危険と判定したか」が常に出力される** のが最大の違いです。
 上の `├─` の並びがソースからシンクまでの実際の経路で、
 SAST で最も時間を食う「本当に到達しうるのか」の確認作業を省きます。
+（この出力はリポジトリ同梱の `examples/vulnerable-api` を実際に解析したものです。）
 
 [![CI](https://github.com/shiyuanyeming-hub/shirokuma-sast/actions/workflows/ci.yml/badge.svg)](https://github.com/shiyuanyeming-hub/shirokuma-sast/actions/workflows/ci.yml)
 
@@ -393,7 +396,7 @@ jobs:
 npm install
 npm run build        # dist へコンパイル
 npm run typecheck    # 型検査（strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes）
-npm test             # 484 テスト
+npm test             # 491 テスト
 npm run bench        # 精度測定（reports/ へ出力）
 npm run selfscan     # 自分自身をスキャンする（ドッグフーディング）
 ```

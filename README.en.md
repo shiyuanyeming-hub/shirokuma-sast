@@ -11,25 +11,29 @@ operation it reaches**.
 
 ![Tracing how taint flows](docs/assets/taint-flow.png)
 
-```
-$ shirokuma scan .
+```console
+$ shirokuma scan examples/vulnerable-api
 
-shirokuma-sast 0.1.0 — 3 findings (error 2 / warning 1 / note 0)
+shirokuma-sast 0.1.0 — 4 findings (error 4 / warning 0 / note 0)
 
-[error] sql-query  src/app.ts:8:3
-  Untrusted input reaches `query()` (SQL injection)
-  cwe: CWE-89
-  advice: Use placeholders ($1 / ?) instead of building queries by concatenation.
-  ├─ source    src/app.ts:6:15  req.query.id (Express: query string value)
-  ├─ propagate src/app.ts:6:9   id
-  ├─ propagate src/app.ts:7:34  'SELECT * FROM users WHERE id = ' + id
-  ├─ propagate src/app.ts:7:9   sql
-  └─ sink      src/app.ts:8:3   db.query
+[error] command-exec  src/command.ts:9:3
+  Untrusted input reaches `exec()` (OS command injection)
+  cwe: CWE-78
+  advice: Use `execFile` / `spawn` with an argument array instead of `exec`, so no shell is involved.
+  ├─ source    src/command.ts:8:16  req.query.host (Express: query string value)
+  ├─ propagate src/command.ts:8:9  host
+  ├─ propagate src/command.ts:9:8  'ping -c 1 ' + host
+  └─ sink      src/command.ts:9:3  exec
+
+
+  …and 3 more (SQL injection / XSS / path traversal)
 ```
 
 Every finding ships with the actual source→sink path. That path is the single most
 time-consuming part of triaging SAST output — deciding whether a warning is
 reachable — and this engine answers it in the finding itself.
+
+(The output above is a real scan of the bundled `examples/vulnerable-api`.)
 
 [![CI](https://github.com/shiyuanyeming-hub/shirokuma-sast/actions/workflows/ci.yml/badge.svg)](https://github.com/shiyuanyeming-hub/shirokuma-sast/actions/workflows/ci.yml)
 
@@ -372,7 +376,7 @@ issue as "ongoing" rather than "new".
 npm install
 npm run build        # compile to dist/
 npm run typecheck    # strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes
-npm test             # 484 tests
+npm test             # 491 tests
 npm run bench        # measure precision/recall, write reports/, update this README
 npm run selfscan     # scan this repository with itself (dogfooding)
 ```
