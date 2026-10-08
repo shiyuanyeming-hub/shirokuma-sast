@@ -301,7 +301,7 @@ TypeScript AST
 | F1 | **0.955** |
 | 真陽性 / 偽陽性 / 偽陰性 | 21 / 2 / 0 |
 
-対象: 31 ファイル / 45 関数 / 45ms。教師データは脆弱 21 箇所＋安全 13 箇所。
+対象: 31 ファイル / 45 関数。教師データは脆弱 21 箇所＋安全 13 箇所。 解析時間は環境依存のためここには載せない（`reports/benchmark.json` を参照）。適合率・再現率は決定的なので、`npm run bench` を再実行しても差分が出ない。
 
 系統別:
 
@@ -319,8 +319,6 @@ TypeScript AST
 
 - **偽陽性**: `clean/path-basename.ts:10` (`xss-res-send`)
 - **偽陽性**: `clean/redirect-whitelist.ts:10` (`redirect-res`)
-
-最終更新: 2026-10-08（`npm run bench` で再現可能）
 <!-- BENCHMARK:END -->
 
 測り方の定義:

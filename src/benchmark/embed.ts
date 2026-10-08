@@ -55,8 +55,7 @@ interface Labels {
   readonly none: string;
   readonly falseNegative: string;
   readonly falsePositive: string;
-  readonly scope: (files: number, functions: number, millis: number, vulnerable: number, clean: number) => string;
-  readonly updated: (date: string) => string;
+  readonly scope: (files: number, functions: number, vulnerable: number, clean: number) => string;
 }
 
 const LABELS: Record<Lang, Labels> = {
@@ -72,9 +71,10 @@ const LABELS: Record<Lang, Labels> = {
     none: '- なし。',
     falseNegative: '偽陰性',
     falsePositive: '偽陽性',
-    scope: (files, functions, millis, vulnerable, clean) =>
-      `対象: ${files} ファイル / ${functions} 関数 / ${millis}ms。教師データは脆弱 ${vulnerable} 箇所＋安全 ${clean} 箇所。`,
-    updated: (date) => `最終更新: ${date}（\`npm run bench\` で再現可能）`,
+    scope: (files, functions, vulnerable, clean) =>
+      `対象: ${files} ファイル / ${functions} 関数。教師データは脆弱 ${vulnerable} 箇所＋安全 ${clean} 箇所。` + ' ' +
+      '解析時間は環境依存のためここには載せない（`reports/benchmark.json` を参照）。' +
+      '適合率・再現率は決定的なので、`npm run bench` を再実行しても差分が出ない。',
   },
   en: {
     metric: 'Metric',
@@ -88,9 +88,10 @@ const LABELS: Record<Lang, Labels> = {
     none: '- None.',
     falseNegative: 'False negative',
     falsePositive: 'False positive',
-    scope: (files, functions, millis, vulnerable, clean) =>
-      `Scope: ${files} files / ${functions} functions / ${millis}ms. Corpus: ${vulnerable} vulnerable and ${clean} safe cases.`,
-    updated: (date) => `Last updated: ${date} (reproducible via \`npm run bench\`)`,
+    scope: (files, functions, vulnerable, clean) =>
+      `Scope: ${files} files / ${functions} functions. Corpus: ${vulnerable} vulnerable and ${clean} safe cases. ` +
+      'Wall-clock time is environment-dependent and is deliberately not embedded here (see `reports/benchmark.json`). ' +
+      'Precision and recall are deterministic, so re-running `npm run bench` produces no diff.',
   },
 };
 
@@ -108,9 +109,7 @@ function render(report: Report, vulnerableCount: number, cleanCount: number, lan
     `| ${label.counts} | ${report.overall.truePositives} / ${report.overall.falsePositives} / ${report.overall.falseNegatives} |`,
   );
   lines.push('');
-  lines.push(
-    label.scope(report.totals.files, report.totals.functions, report.totals.millis, vulnerableCount, cleanCount),
-  );
+  lines.push(label.scope(report.totals.files, report.totals.functions, vulnerableCount, cleanCount));
   lines.push('');
   lines.push(label.byFamily);
   lines.push('');
@@ -135,8 +134,9 @@ function render(report: Report, vulnerableCount: number, cleanCount: number, lan
     }
   }
   lines.push('');
-  lines.push(label.updated(report.generatedAt.slice(0, 10)));
-  lines.push('');
+  // 生成日時はあえて埋め込まない。毎回変わると、指標が同じでも
+  // 作業ツリーが汚れ、CI の差分もノイズになる。
+  // 由来は reports/benchmark.json の generatedAt に残している。
   return lines.join('\n');
 }
 

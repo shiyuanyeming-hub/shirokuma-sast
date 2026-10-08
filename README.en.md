@@ -279,7 +279,7 @@ resolution, self-edges on dynamic keys, nested sink duplication) — are in
 | F1 | **0.955** |
 | True / false positives / false negatives | 21 / 2 / 0 |
 
-Scope: 31 files / 45 functions / 45ms. Corpus: 21 vulnerable and 13 safe cases.
+Scope: 31 files / 45 functions. Corpus: 21 vulnerable and 13 safe cases. Wall-clock time is environment-dependent and is deliberately not embedded here (see `reports/benchmark.json`). Precision and recall are deterministic, so re-running `npm run bench` produces no diff.
 
 By vulnerability family:
 
@@ -297,8 +297,6 @@ Remaining errors (stated plainly):
 
 - **False positive**: `clean/path-basename.ts:10` (`xss-res-send`)
 - **False positive**: `clean/redirect-whitelist.ts:10` (`redirect-res`)
-
-Last updated: 2026-10-08 (reproducible via `npm run bench`)
 <!-- BENCHMARK:END -->
 
 Scoring definitions:

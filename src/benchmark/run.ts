@@ -62,13 +62,19 @@ interface CaseOutcome {
 }
 
 interface Report {
-  readonly generatedAt: string;
+  /** レポート形式のバージョン。内容が変わったら上げる。 */
+  readonly reportVersion: 1;
   readonly tool: string;
   readonly overall: Metrics;
   readonly byFamily: Readonly<Record<string, Metrics>>;
   readonly missed: readonly CaseOutcome[];
   readonly falsePositives: readonly { readonly file: string; readonly line: number; readonly ruleId: string; readonly message: string }[];
-  readonly totals: { readonly findings: number; readonly files: number; readonly functions: number; readonly millis: number };
+  readonly totals: { readonly findings: number; readonly files: number; readonly functions: number };
+  /**
+   * 解析時間（ミリ秒）。環境依存のためファイルには保存しない。
+   * 実行のたびに値が変わると、成果物が再現しなくなるため。
+   */
+  readonly millis: number | null;
 }
 
 /** 系統の判定順。複数のタグを持つ検出（例: `$where` は code と nosql の両方）に対応する。 */
@@ -191,7 +197,7 @@ async function main(): Promise<void> {
   }
 
   const report: Report = {
-    generatedAt: new Date().toISOString(),
+    reportVersion: 1,
     tool: `${result.tool.name}@${result.tool.version} (engine ${result.tool.engineVersion})`,
     overall: metrics(truePositives, falsePositives, falseNegatives),
     byFamily,
@@ -206,8 +212,9 @@ async function main(): Promise<void> {
       findings: result.findings.length,
       files: result.stats.filesScanned,
       functions: result.stats.functionsAnalysed,
-      millis,
     },
+    // 実行時間は標準出力にだけ出す（ファイルへ書くと再現性が壊れるため）。
+    millis: null,
   };
 
   await mkdir(REPORTS, { recursive: true });
@@ -239,7 +246,7 @@ function renderMarkdown(report: Report, manifest: Manifest): string {
   const lines: string[] = [];
   lines.push('# 検出精度ベンチマーク');
   lines.push('');
-  lines.push(`生成: ${report.generatedAt} / ツール: \`${report.tool}\``);
+  lines.push(`ツール: \`${report.tool}\``);
   lines.push('');
   lines.push('## 総合');
   lines.push('');
@@ -250,7 +257,7 @@ function renderMarkdown(report: Report, manifest: Manifest): string {
   lines.push(`| F1 | ${report.overall.f1.toFixed(3)} |`);
   lines.push(`| 真陽性 / 偽陽性 / 偽陰性 | ${report.overall.truePositives} / ${report.overall.falsePositives} / ${report.overall.falseNegatives} |`);
   lines.push('');
-  lines.push(`対象: ${report.totals.files} ファイル / ${report.totals.functions} 関数 / 解析時間 ${report.totals.millis}ms`);
+  lines.push(`対象: ${report.totals.files} ファイル / ${report.totals.functions} 関数`);
   lines.push(`教師データ: 脆弱 ${manifest.vulnerable.length} 箇所 + 安全 ${manifest.clean.length} 箇所（行の許容差 ${manifest.tolerance} 行）`);
   lines.push('');
   lines.push('## 系統別');
@@ -289,6 +296,8 @@ function renderMarkdown(report: Report, manifest: Manifest): string {
   }
   lines.push('');
   lines.push('> この表は `npm run bench` で再生成される。数値は手で書かず、必ず実行結果から取ること。');
+  lines.push('> レポートは決定的に生成される（日時・実行時間を含めない）ため、');
+  lines.push('> 指標が変わっていなければ再実行しても差分が出ない。');
   lines.push('');
   return lines.join('\n');
 }

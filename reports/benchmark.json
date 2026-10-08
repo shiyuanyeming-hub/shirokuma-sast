@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-08T07:20:55.625Z",
+  "reportVersion": 1,
   "tool": "shirokuma-sast@0.1.0 (engine 0.1.0)",
   "overall": {
     "truePositives": 21,
@@ -85,7 +85,7 @@
   "totals": {
     "findings": 23,
     "files": 31,
-    "functions": 45,
-    "millis": 45
-  }
+    "functions": 45
+  },
+  "millis": null
 }
